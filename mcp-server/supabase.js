@@ -79,14 +79,13 @@ export async function criarHabito({
     }
 
     // 2. Contar quantos hábitos o usuário já tem (ativos)
-    const { data: habitos, error: erroCount } = await supabase
+    const { count: habitosCount, error: erroCount } = await supabase
       .from("habits")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("is_active", true);
 
-    if (!erroCount && habitos.length >= 3) {
-      return {
+      if (!erroCount && habitosCount && habitosCount >= 3) {      return {
         sucesso: false,
         mensagem: `⚠️ Limite atingido! Você tem 3 hábito(s) ativo(s). Máximo: 3. Delete ou desative um antes de criar novo.`,
       };
