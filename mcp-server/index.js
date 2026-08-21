@@ -43,8 +43,8 @@ app.get("/sse", async (req, res) => {
       "Cria um novo hábito para o usuário. Máximo 3 hábitos ativos por usuário.",
       {
         telegramChatId: z.number().describe("ID do chat do Telegram"),
-        telegramUsername: z.string().optional().describe("Nome de usuário do Telegram"),
-        firstName: z.string().optional().describe("Primeiro nome do usuário"),
+        telegramUsername: z.string().nullable().optional().describe("Nome de usuário do Telegram"),
+        firstName: z.string().nullable().optional().describe("Primeiro nome do usuário"),
         nome: z.string().describe("Nome do hábito (ex: 'Corrida', 'Estudo')"),
         descricao: z.string().optional().describe("Descrição detalhada do hábito"),
         categoria: z
@@ -54,12 +54,17 @@ app.get("/sse", async (req, res) => {
         icone: z.string().optional().describe("Emoji do hábito (ex: '🏃')"),
       },
       async (args) => {
-        const resultado = await criarHabito(args);
+        // Garante que null vire undefined
+        const resultado = await criarHabito({
+          ...args,
+          telegramUsername: args.telegramUsername || undefined,
+          firstName: args.firstName || undefined,
+        });
         return {
           content: [{ type: "text", text: JSON.stringify(resultado, null, 2) }],
         };
       }
-    );
+    )
 
     // ============================================
     // FERRAMENTA 2: Listar hábitos

@@ -19,8 +19,10 @@ const supabase = createClient(
  * Se já existir mas estiver sem nome, atualiza com os dados do Telegram.
  */
 async function garantirUsuario(telegramChatId, telegramUsername, firstName) {
+   const username = telegramUsername || null;
+   const nome = firstName || null;
   // Busca o usuário
-  const { data: usuarioExistente, error: erroSelect } = await supabase
+   const { data: usuarioExistente, error: erroSelect } = await supabase
     .from("users")
     .select("id, first_name, telegram_username")
     .eq("telegram_chat_id", telegramChatId)
