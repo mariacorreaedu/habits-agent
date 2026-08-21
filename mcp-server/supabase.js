@@ -15,18 +15,34 @@ const supabase = createClient(
 
 /**
  * Garante que o usuário existe na tabela `users`
- * Se não existir, cria um novo registro
+ * Se não existir, cria um novo registro.
+ * Se já existir mas estiver sem nome, atualiza com os dados do Telegram.
  */
 async function garantirUsuario(telegramChatId, telegramUsername, firstName) {
   // Busca o usuário
   const { data: usuarioExistente, error: erroSelect } = await supabase
     .from("users")
-    .select("id")
+    .select("id, first_name, telegram_username")
     .eq("telegram_chat_id", telegramChatId)
     .single();
 
-  // Se encontrou, retorna o ID
+  // Se encontrou, retorna o ID (e atualiza nome se estava vazio)
   if (usuarioExistente) {
+    // Preenche nome/username se estavam nulos e agora temos o dado
+    const precisaAtualizar =
+      (!usuarioExistente.first_name && firstName) ||
+      (!usuarioExistente.telegram_username && telegramUsername);
+
+    if (precisaAtualizar) {
+      await supabase
+        .from("users")
+        .update({
+          first_name: usuarioExistente.first_name || firstName,
+          telegram_username: usuarioExistente.telegram_username || telegramUsername,
+        })
+        .eq("id", usuarioExistente.id);
+    }
+
     return { sucesso: true, userId: usuarioExistente.id };
   }
 
@@ -85,7 +101,8 @@ export async function criarHabito({
       .eq("user_id", userId)
       .eq("is_active", true);
 
-      if (!erroCount && habitosCount && habitosCount >= 3) {      return {
+    if (!erroCount && habitosCount && habitosCount >= 3) {
+      return {
         sucesso: false,
         mensagem: `⚠️ Limite atingido! Você tem 3 hábito(s) ativo(s). Máximo: 3. Delete ou desative um antes de criar novo.`,
       };
@@ -109,10 +126,13 @@ export async function criarHabito({
       return { sucesso: false, mensagem: `❌ Erro ao criar hábito: ${erroInsert.message}` };
     }
 
+    // Usa habitosCount (não "habitos") para montar a contagem
+    const totalAtual = (habitosCount || 0) + 1;
+
     return {
       sucesso: true,
       habitoId: novoHabito.id,
-      mensagem: `✅ Hábito "${nome}" criado com sucesso! (${habitos.length + 1}/3)`,
+      mensagem: `✅ Hábito "${nome}" criado com sucesso! (${totalAtual}/3)`,
       habito: novoHabito,
     };
   } catch (err) {
@@ -234,12 +254,12 @@ export async function registrarExecucao({
       return { sucesso: false, mensagem: erroUser };
     }
 
-    // 2. Buscar o hábito pelo nome
+    // 2. Buscar o hábito pelo nome (case-insensitive)
     const { data: habito, error: erroHabito } = await supabase
       .from("habits")
       .select("id")
       .eq("user_id", userId)
-      .eq("name", habitoNome)
+      .ilike("name", habitoNome)
       .eq("is_active", true)
       .single();
 
@@ -434,7 +454,7 @@ export async function verEstatisticas({
       .from("habits")
       .select("id, name")
       .eq("user_id", userId)
-      .eq("name", habitoNome)
+      .ilike("name", habitoNome)
       .eq("is_active", true)
       .single();
 
