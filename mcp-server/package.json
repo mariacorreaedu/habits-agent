@@ -1,17 +1,33 @@
 {
-   "name": "habits-mcp-server",
+   "name": "habit-tracker-mcp-server",
    "version": "2.0.0",
-   "description": "Servidor MCP para gerenciar habitos usando Supabase (Postgres)",
+   "description": "MCP Server para Habit Tracker - integração com Supabase",
    "type": "module",
-   "main": "server.js",
+   "main": "index.js",
    "scripts": {
-     "start": "node server.js"
+     "start": "node index.js",
+     "dev": "node --watch index.js",
+     "build": "echo 'No build needed for Node.js project'",
+     "test": "echo 'Add tests here'"
    },
+   "keywords": [
+     "mcp",
+     "habit-tracker",
+     "supabase",
+     "telegram",
+     "n8n"
+   ],
+   "author": "Maria Correa",
+   "license": "MIT",
    "dependencies": {
-     "@modelcontextprotocol/sdk": "^1.0.4",
-     "@supabase/supabase-js": "^2.45.4",
-     "express": "^4.19.2",
-     "dotenv": "^16.4.5",
-     "zod": "^3.23.8"
+     "@modelcontextprotocol/sdk": "^1.0.0",
+     "@supabase/supabase-js": "^2.39.0",
+     "dotenv": "^16.3.1",
+     "express": "^4.18.2",
+     "zod": "^3.22.4"
+   },
+   "devDependencies": {},
+   "engines": {
+     "node": ">=18.0.0"
    }
  }
