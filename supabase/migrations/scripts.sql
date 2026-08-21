@@ -454,3 +454,65 @@ SELECT * FROM user_habits_summary;
 -- ============================================
 -- FIM DO SCHEMA
 -- ============================================
+
+
+ALTER TABLE users ADD COLUMN share_token TEXT UNIQUE DEFAULT gen_random_uuid();
+
+
+CREATE INDEX idx_users_share_token ON users(share_token);
+
+-- Remova as policies antigas de habits/logs/metrics
+
+-- Nova policy: qualquer um pode VER se tiver o chat_id certo
+CREATE POLICY "habits_view_by_chat_id" ON habits
+  FOR SELECT USING (
+    -- Deixa qualquer um ver, o controle fica no app
+    true
+  );
+
+-- Mesma coisa pra habit_logs e habit_metrics
+CREATE POLICY "logs_view_by_chat_id" ON habit_logs FOR SELECT USING (true);
+CREATE POLICY "metrics_view_by_chat_id" ON habit_metrics FOR SELECT USING (true);
+
+-- Insert/Update/Delete continua só pra o bot (service_role)
+CREATE POLICY "logs_insert_by_service" ON habit_logs
+  FOR INSERT WITH CHECK (true);
+
+
+-- REMOVA as policies antigas de auth.uid()
+
+-- Deletar as antigas (se tiverem)
+DROP POLICY IF EXISTS "users_see_own_data" ON users;
+DROP POLICY IF EXISTS "users_can_update_own" ON users;
+DROP POLICY IF EXISTS "habits_user_access" ON habits;
+DROP POLICY IF EXISTS "habit_logs_user_access" ON habit_logs;
+DROP POLICY IF EXISTS "habit_metrics_user_access" ON habit_metrics;
+
+-- NOVAS POLICIES: qualquer um pode VER (o filtro fica no app)
+
+-- Users: qualquer um pode ler
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "users_view_all" ON users FOR SELECT USING (true);
+
+-- Habits: qualquer um pode ler
+ALTER TABLE habits ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "habits_view_all" ON habits FOR SELECT USING (true);
+CREATE POLICY "habits_insert_service_role" ON habits 
+  FOR INSERT WITH CHECK (true);
+
+-- Habit logs: qualquer um pode ler
+ALTER TABLE habit_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "logs_view_all" ON habit_logs FOR SELECT USING (true);
+CREATE POLICY "logs_insert_service_role" ON habit_logs 
+  FOR INSERT WITH CHECK (true);
+
+-- Metrics: qualquer um pode ler
+ALTER TABLE habit_metrics ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "metrics_view_all" ON habit_metrics FOR SELECT USING (true);
+
+ALTER TABLE users
+ADD CONSTRAINT users_telegram_chat_id_unique 
+UNIQUE (telegram_chat_id);
+
+CREATE INDEX IF NOT EXISTS idx_users_telegram_chat_id 
+ON users(telegram_chat_id);
